@@ -5,6 +5,14 @@ pragma solidity ^0.8.9;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface IERC20 {
+    function transfer(address _to, uint256 _value) external returns (bool);
+
+    function transferFrom(address from, address to, uint value) external return (bool);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+}
+
 contract ChickenWrap is Ownable {
     struct Plan {
         uint256 price; //max amount of money that can be paid in one interval
@@ -21,15 +29,18 @@ contract ChickenWrap is Ownable {
 
     uint256 registerFee;
     uint256 createPlanFee;
+    IERC20 usdt;
 
     uint256 currentPlanId = 1;
     uint256 currentSubscriptionId = 1;
+    uint256 commonFee = 20;
 
     //partner data
     mapping(address => bool) registeredPartners;
     mapping(uint256 => Plan) idToPlans;
     mapping(address => mapping(uint256 => bool)) partnerToIds;
     mapping(uint256 => mapping(uint256 => uint256)) planIdToSubscription;
+    mapping(uint256 => address) planIdToPartners;
 
     //shared data
     mapping(uint256 => Subscription) subscriptions;
@@ -38,9 +49,10 @@ contract ChickenWrap is Ownable {
     mapping(address => uint256) balance;
     mapping(address => mapping(uint256 => uint256)) userToSubscriptionId;
 
-    constructor(uint256 _registerFee, uint256 _createPlanFee) {
+    constructor(uint256 _registerFee, uint256 _createPlanFee, address _usdt) {
         registerFee = _registerFee;
         createPlanFee = _createPlanFee;
+        usdt = IERC20(address(_usdt));
     }
 
     //partner section
@@ -122,6 +134,19 @@ contract ChickenWrap is Ownable {
     //user section
     function deposit() external payable {
         balance[msg.sender] += msg.value;
+    }
+
+    function transfer(address from, uint256 planId) external {
+        //todo: get amount of subscription from our data
+        //todo: transfer 95% of amount to partner, 5% transfer to our contract
+        plan = idToPlans[planId];
+        partnerAddress = ;
+        
+        feeAmount = plan.price / commonFee;
+        amount = plan.price - feeAmount;
+        usdt.transferFrom(from, partnerAddress, amount);
+        usdt.transferFrom(from, address(this), feeAmount);
+
     }
 
     function withdraw() external {
