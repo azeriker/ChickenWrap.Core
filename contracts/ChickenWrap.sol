@@ -15,9 +15,12 @@ interface IERC20 {
 
 contract ChickenWrap is Ownable {
     struct Plan {
+        bool reccuring; //reccuring(A) if true otherwise model(B) 
+        //model A
         uint256 price; //amount of money will withdraw per one reccuringInterval
         uint256 reccuringInterval; //time between payments
         //or todo discuss
+        //model B
         uint256 maxAmount; //max amount of money that can be withdrawed in one period
         uint256 period; //period per maxAmount
 
@@ -34,13 +37,14 @@ contract ChickenWrap is Ownable {
     uint256 registerFee;
     uint256 createPlanFee;
     IERC20 stable;
+    address adminAddress;
+    uint256 multiplier;
 
     uint256 currentPlanId = 1;
     uint256 currentSubscriptionId = 1;
     uint256 commonFee = 20;
 
     //partner data
-    mapping(address => bool) registeredPartners;
     mapping(uint256 => Plan) idToPlans;
     mapping(address => mapping(uint256 => bool)) partnerToIds;
     mapping(uint256 => mapping(uint256 => uint256)) planIdToSubscription;
@@ -58,31 +62,23 @@ contract ChickenWrap is Ownable {
         createPlanFee = 100;
         //busd address
         stable = IERC20(address(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee));
+        adminAddress = address(0x2bd1365a502F83fd0AEa5c0bbd8551E24e548c7C);
+        multiplier = 10**18; //decimals in our stable
     }
 
     //partner section
-    function register() external payable {
-        //todo uncomment and withdraw stable
-        //require(msg.value == registerFee); //check fee
-        require(!isRegistered(msg.sender)); //check for not registered yet
-
-        registeredPartners[msg.sender] = true;
-    }
-
-    function isRegistered(address addr) public view returns (bool) {
-        return registeredPartners[addr];
-    }
-
-    function createPlan(Plan calldata plan) external payable {
+    function createPlan(Plan calldata plan) external {
         //todo uncomment and withdraw stable
         //require(msg.value == createPlanFee); //check fee amount
 
         //todo validate plan parameters
-
-        idToPlans[currentPlanId] = plan;
-        partnerToIds[msg.sender][currentPlanId] = true;
-        planIdToPartners[currentPlanId] = msg.sender;
-        currentPlanId++;
+        //todo test it
+        if(stable.transferFrom(msg.sender, adminAddrss, createPlanFee * multiplier)){
+            idToPlans[currentPlanId] = plan;
+            partnerToIds[msg.sender][currentPlanId] = true;
+            planIdToPartners[currentPlanId] = msg.sender;
+            currentPlanId++;
+        }
     }
 
     function removePlan(uint256 planId) external {
