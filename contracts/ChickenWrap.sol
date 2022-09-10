@@ -15,9 +15,13 @@ interface IERC20 {
 
 contract ChickenWrap is Ownable {
     struct Plan {
-        uint256 price; //max amount of money that can be paid in one interval
-        uint256 interval; //min time between payments
-        uint256 reward;
+        uint256 price; //amount of money will withdraw per one reccuringInterval
+        uint256 reccuringInterval; //time between payments
+        //or todo discuss
+        uint256 maxAmount; //max amount of money that can be withdrawed in one period
+        uint256 period; //period per maxAmount
+
+        uint256 reward; // todo remove this bullshit
     }
 
     struct Subscription {
@@ -49,15 +53,16 @@ contract ChickenWrap is Ownable {
     mapping(address => uint256) balance;
     mapping(address => mapping(uint256 => uint256)) userToSubscriptionId;
 
-    constructor(uint256 _registerFee, uint256 _createPlanFee, address _usdt) {
-        registerFee = _registerFee;
-        createPlanFee = _createPlanFee;
         usdt = IERC20(address(_usdt));
+    constructor() {
+        registerFee = 10;
+        createPlanFee = 100;
     }
 
     //partner section
     function register() external payable {
-        require(msg.value == registerFee); //check fee
+        //todo uncomment and withdraw stable
+        //require(msg.value == registerFee); //check fee
         require(!isRegistered(msg.sender)); //check for not registered yet
 
         registeredPartners[msg.sender] = true;
@@ -68,7 +73,8 @@ contract ChickenWrap is Ownable {
     }
 
     function createPlan(Plan calldata plan) external payable {
-        require(msg.value == createPlanFee); //check fee amount
+        //todo uncomment and withdraw stable
+        //require(msg.value == createPlanFee); //check fee amount
 
         //todo validate plan parameters
 
@@ -83,51 +89,53 @@ contract ChickenWrap is Ownable {
         partnerToIds[msg.sender][currentPlanId] = false;
     }
 
-    function getBillableSubscriptions(uint256 planId)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        Plan memory currentPlan = idToPlans[planId];
-        require(currentPlan.price > 0); //check plan for exist
-        uint256[] memory subscriptionIds;
-        uint256 foundId;
-        for (uint256 i = 1; i < currentSubscriptionId; i++) {
-            if (planIdToSubscription[planId][i] == i) {
-                if (isSubscriptionReadyForBill(subsription, plan)) 
-                {
-                    subscriptionIds[foundId] = i;
-                    foundId++;
-                }
-            }
-        }
+    // function getBillableSubscriptions(uint256 planId)
+    //     external
+    //     view
+    //     returns (uint256[] memory)
+    // {
+    //     Plan memory currentPlan = idToPlans[planId];
+    //     require(currentPlan.price > 0); //check plan for exist
+    //     uint256[] memory subscriptionIds;
+    //     uint256 foundId;
+    //     for (uint256 i = 1; i < currentSubscriptionId; i++) {
+    //         if (planIdToSubscription[planId][i] == i) {
+    //             Subscription 
+    //             if (isSubscriptionReadyForBill(subsription, plan)) 
+    //             {
+    //                 subscriptionIds[foundId] = i;
+    //                 foundId++;
+    //             }
+    //         }
+    //     }
 
-        return subscriptionIds;
-    }
+    //     return subscriptionIds;
+    // }
 
     //todo there are two ways to implement billing.
-    //1. Partner call some method and get money transfers for ready for bill subscriptions
-    //2. Oracle call some method and increase internal balances of partners. Partners can withdraw balance on demand
+    //1. Partner call some method and get money transfers
+    //2. Oracle call some method and we transfer ready amounts to partner wallets
 
     //todo think about naming
     //this is main function to get money from subscribers to partners  
     function billSubscriptions(uint256[] calldata subscriptionIds) external returns(address[] memory, uint256[] memory) {
         //todo check that msg.sender owner of plans in ids, or maybe allow to one plan per method call
         
-        address[] memory addresses = new address(subscriptionIds.length);
-        uint256[] memory paid = new uint256(subscriptionIds.length);
+        address[] memory addresses = new address[](subscriptionIds.length);
+        uint256[] memory paidByAddress = new uint256[](subscriptionIds.length);
 
         for (uint256 index = 0; index < subscriptionIds.length; index++) {
             uint256 subscriptionId = subscriptionIds[index];
             Subscription storage subscription = subscriptions[subscriptionId];
             Plan memory plan = idToPlans[subscription.planId];
             require(
-                isSubscriptionReadyForBill(subsription, plan)
+                isSubscriptionReadyForBill(subscription, plan)
             );
             subscription.lastWithdrawTime = block.timestamp;
             balance[subscription.user] -= plan.price;
             payable(msg.sender).transfer(plan.price);
-            paidByAddress[subscription.user] = plan.price;
+            paidByAddress[index] = plan.price;
+            addresses[index] = subscription.user;
         }
     }
 
@@ -185,9 +193,9 @@ contract ChickenWrap is Ownable {
 
     //pure section
     function isSubscriptionReadyForBill(
-        Subscription calldata subscription,
-        Plan calldata plan
-    ) public pure returns (bool) {
-        return subscription.lastWithdrawTime + plan.interval < block.timestamp
+        Subscription memory subscription,
+        Plan memory plan
+    ) public view returns (bool) {
+        return subscription.lastWithdrawTime + plan.reccuringInterval < block.timestamp;
     }
 }
