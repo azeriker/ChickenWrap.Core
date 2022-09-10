@@ -73,7 +73,7 @@ contract ChickenWrap is Ownable {
 
         //todo validate plan parameters
         //todo test it
-        if(stable.transferFrom(msg.sender, adminAddrss, createPlanFee * multiplier)){
+        if(stable.transferFrom(msg.sender, adminAddress, createPlanFee * multiplier)){
             idToPlans[currentPlanId] = plan;
             partnerToIds[msg.sender][currentPlanId] = true;
             planIdToPartners[currentPlanId] = msg.sender;
