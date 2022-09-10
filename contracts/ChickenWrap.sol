@@ -88,9 +88,11 @@ contract ChickenWrap is Ownable {
         uint256 foundId;
         for (uint256 i = 1; i < currentSubscriptionId; i++) {
             if (planIdToSubscription[planId][i] == i) {
-                if (
-                    isSubscriptionReadyForBill(subsription, plan)
-                ) subscriptionIds[foundId] = i;
+                if (isSubscriptionReadyForBill(subsription, plan)) 
+                {
+                    subscriptionIds[foundId] = i;
+                    foundId++;
+                }
             }
         }
 
