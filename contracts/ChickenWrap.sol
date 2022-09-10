@@ -33,7 +33,7 @@ contract ChickenWrap is Ownable {
 
     uint256 registerFee;
     uint256 createPlanFee;
-    IERC20 usdt;
+    IERC20 stable;
 
     uint256 currentPlanId = 1;
     uint256 currentSubscriptionId = 1;
@@ -53,10 +53,11 @@ contract ChickenWrap is Ownable {
     mapping(address => uint256) balance;
     mapping(address => mapping(uint256 => uint256)) userToSubscriptionId;
 
-        usdt = IERC20(address(_usdt));
     constructor() {
         registerFee = 10;
         createPlanFee = 100;
+        //busd address
+        stable = IERC20(address(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee));
     }
 
     //partner section
@@ -152,8 +153,8 @@ contract ChickenWrap is Ownable {
         
         feeAmount = plan.price / commonFee;
         amount = plan.price - feeAmount;
-        usdt.transferFrom(from, partnerAddress, amount);
-        usdt.transferFrom(from, address(this), feeAmount);
+        stable.transferFrom(from, partnerAddress, amount);
+        stable.transferFrom(from, address(this), feeAmount);
 
     }
 
