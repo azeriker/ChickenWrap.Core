@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface IERC20 {
     function transfer(address _to, uint256 _value) external returns (bool);
 
-    function transferFrom(address from, address to, uint value) external return (bool);
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
 
     function approve(address spender, uint256 amount) external returns (bool);
 }
@@ -81,6 +81,7 @@ contract ChickenWrap is Ownable {
 
         idToPlans[currentPlanId] = plan;
         partnerToIds[msg.sender][currentPlanId] = true;
+        planIdToPartners[currentPlanId] = msg.sender;
         currentPlanId++;
     }
 
@@ -88,6 +89,7 @@ contract ChickenWrap is Ownable {
         require(partnerToIds[msg.sender][planId] == true); //check plan for exist
         delete idToPlans[planId];
         partnerToIds[msg.sender][currentPlanId] = false;
+        planIdToPartners[planId] = address(0);
     }
 
     // function getBillableSubscriptions(uint256 planId)
@@ -146,16 +148,15 @@ contract ChickenWrap is Ownable {
     }
 
     function transfer(address from, uint256 planId) external {
-        //todo: get amount of subscription from our data
-        //todo: transfer 95% of amount to partner, 5% transfer to our contract
-        plan = idToPlans[planId];
-        partnerAddress = ;
-        
-        feeAmount = plan.price / commonFee;
-        amount = plan.price - feeAmount;
+        address partnerAddress = planIdToPartners[planId];
+        require(partnerAddress != address(0));
+
+        Plan memory plan = idToPlans[planId];
+
+        uint256 feeAmount = plan.price / commonFee;
+        uint256 amount = plan.price - feeAmount;
         stable.transferFrom(from, partnerAddress, amount);
         stable.transferFrom(from, address(this), feeAmount);
-
     }
 
     function withdraw() external {
