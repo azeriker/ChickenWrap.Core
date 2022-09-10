@@ -5,6 +5,14 @@ pragma solidity ^0.8.9;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface IERC20 {
+    function transfer(address _to, uint256 _value) external returns (bool);
+
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+}
+
 contract ChickenWrap is Ownable {
     struct Plan {
         uint256 price; //amount of money will withdraw per one reccuringInterval
@@ -25,15 +33,18 @@ contract ChickenWrap is Ownable {
 
     uint256 registerFee;
     uint256 createPlanFee;
+    IERC20 stable;
 
     uint256 currentPlanId = 1;
     uint256 currentSubscriptionId = 1;
+    uint256 commonFee = 20;
 
     //partner data
     mapping(address => bool) registeredPartners;
     mapping(uint256 => Plan) idToPlans;
     mapping(address => mapping(uint256 => bool)) partnerToIds;
     mapping(uint256 => mapping(uint256 => uint256)) planIdToSubscription;
+    mapping(uint256 => address) planIdToPartners;
 
     //shared data
     mapping(uint256 => Subscription) subscriptions;
@@ -45,6 +56,8 @@ contract ChickenWrap is Ownable {
     constructor() {
         registerFee = 10;
         createPlanFee = 100;
+        //busd address
+        stable = IERC20(address(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee));
     }
 
     //partner section
@@ -68,6 +81,7 @@ contract ChickenWrap is Ownable {
 
         idToPlans[currentPlanId] = plan;
         partnerToIds[msg.sender][currentPlanId] = true;
+        planIdToPartners[currentPlanId] = msg.sender;
         currentPlanId++;
     }
 
@@ -75,6 +89,7 @@ contract ChickenWrap is Ownable {
         require(partnerToIds[msg.sender][planId] == true); //check plan for exist
         delete idToPlans[planId];
         partnerToIds[msg.sender][currentPlanId] = false;
+        planIdToPartners[planId] = address(0);
     }
 
     // function getBillableSubscriptions(uint256 planId)
@@ -130,6 +145,18 @@ contract ChickenWrap is Ownable {
     //user section
     function deposit() external payable {
         balance[msg.sender] += msg.value;
+    }
+
+    function transfer(address from, uint256 planId) external {
+        address partnerAddress = planIdToPartners[planId];
+        require(partnerAddress != address(0));
+
+        Plan memory plan = idToPlans[planId];
+
+        uint256 feeAmount = plan.price / commonFee;
+        uint256 amount = plan.price - feeAmount;
+        stable.transferFrom(from, partnerAddress, amount);
+        stable.transferFrom(from, address(this), feeAmount);
     }
 
     function withdraw() external {
