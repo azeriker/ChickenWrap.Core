@@ -7,9 +7,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ChickenWrap is Ownable {
     struct Plan {
-        uint256 price; //max amount of money that can be paid in one interval
-        uint256 interval; //min time between payments
-        uint256 reward;
+        uint256 price; //amount of money will withdraw per one reccuringInterval
+        uint256 reccuringInterval; //time between payments
+        //or todo discuss
+        uint256 maxAmount; //max amount of money that can be withdrawed in one period
+        uint256 period //period per maxAmount
+
+        uint256 reward; // todo remove this bullshit
     }
 
     struct Subscription {
@@ -45,7 +49,8 @@ contract ChickenWrap is Ownable {
 
     //partner section
     function register() external payable {
-        require(msg.value == registerFee); //check fee
+        //todo uncomment and withdraw stable
+        //require(msg.value == registerFee); //check fee
         require(!isRegistered(msg.sender)); //check for not registered yet
 
         registeredPartners[msg.sender] = true;
@@ -56,7 +61,8 @@ contract ChickenWrap is Ownable {
     }
 
     function createPlan(Plan calldata plan) external payable {
-        require(msg.value == createPlanFee); //check fee amount
+        //todo uncomment and withdraw stable
+        //require(msg.value == createPlanFee); //check fee amount
 
         //todo validate plan parameters
 
@@ -92,8 +98,8 @@ contract ChickenWrap is Ownable {
     }
 
     //todo there are two ways to implement billing.
-    //1. Partner call some method and get money transfers for ready for bill subscriptions
-    //2. Oracle call some method and increase internal balances of partners. Partners can withdraw balance on demand
+    //1. Partner call some method and get money transfers
+    //2. Oracle call some method and we transfer ready amounts to partner wallets
 
     //todo think about naming
     //this is main function to get money from subscribers to partners  
@@ -161,6 +167,6 @@ contract ChickenWrap is Ownable {
         Subscription calldata subscription,
         Plan calldata plan
     ) public pure returns (bool) {
-        return subscription.lastWithdrawTime + plan.interval < block.timestamp
+        return subscription.lastWithdrawTime + plan.reccuringInterval < block.timestamp
     }
 }
