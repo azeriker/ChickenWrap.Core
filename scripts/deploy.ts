@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
   const Contract = await ethers.getContractFactory("ChickenWrap");
-  const contract = await Contract.deploy(unlockTime, { value: lockedAmount });
+  const contract = await Contract.deploy();
 
   await contract.deployed();
 

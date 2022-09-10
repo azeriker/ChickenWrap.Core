@@ -42,9 +42,9 @@ contract ChickenWrap is Ownable {
     mapping(address => uint256) balance;
     mapping(address => mapping(uint256 => uint256)) userToSubscriptionId;
 
-    constructor(uint256 _registerFee, uint256 _createPlanFee) {
-        registerFee = _registerFee;
-        createPlanFee = _createPlanFee;
+    constructor() {
+        registerFee = 10;
+        createPlanFee = 100;
     }
 
     //partner section
