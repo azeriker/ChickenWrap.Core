@@ -163,8 +163,9 @@ contract ChickenWrap is Ownable {
     function subscribe(uint256 planId) external {
         Plan memory currentPlan = idToPlans[planId];
         require(currentPlan.price > 0); //check plan for exist
-        require(balance[msg.sender] >= currentPlan.price); //balance enough to at least one withdraw
         require(userToSubscriptionId[msg.sender][planId] == 0); //check that user doesnt have this plan already
+
+        //todo: add invocation transfer method here
 
         Subscription memory subscription = Subscription(
             currentSubscriptionId,
