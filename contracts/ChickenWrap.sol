@@ -16,6 +16,7 @@ interface IERC20 {
 contract ChickenWrap is Ownable {
     struct Plan {
         uint256 id;
+        string title;
         bool reccuring; //reccuring(A) if true otherwise model(B) 
         //model A
         uint256 price; //amount of money will withdraw per one reccuringInterval
@@ -75,8 +76,8 @@ contract ChickenWrap is Ownable {
         //todo validate plan parameters
         //todo test it
         if(stable.transferFrom(msg.sender, adminAddress, createPlanFee * multiplier)){
-            plan.id = currentPlanId;
             idToPlans[currentPlanId] = plan;
+            idToPlans[currentPlanId].id= currentPlanId;
             partnerToIds[msg.sender][currentPlanId] = true;
             planIdToPartners[currentPlanId] = msg.sender;
             currentPlanId++;
@@ -91,7 +92,7 @@ contract ChickenWrap is Ownable {
     }
 
     function getBillableSubscriptions(uint256 planId)
-        external
+        public
         view
         returns (uint256[] memory)
     {
@@ -101,7 +102,7 @@ contract ChickenWrap is Ownable {
         uint256 foundId;
         for (uint256 i = 1; i < currentSubscriptionId; i++) {
             if (planIdToSubscription[planId][i] == i) { 
-                if (isSubscriptionReadyForBill(subscriptions[i], currentPlan.id)) 
+                if (isSubscriptionReadyForBill(subscriptions[i], currentPlan)) 
                 {
                     subscriptionIds[foundId] = i;
                     foundId++;
@@ -118,7 +119,7 @@ contract ChickenWrap is Ownable {
 
     //todo think about naming
     //this is main function to get money from subscribers to partners  
-    function billSubscriptions(uint256[] calldata subscriptionIds) external returns(address[] memory, uint256[] memory) {
+    function billSubscriptions(uint256[] memory subscriptionIds) public returns(address[] memory, uint256[] memory)  {
         //todo check that msg.sender owner of plans in ids, or maybe allow to one plan per method call
         
         address[] memory addresses = new address[](subscriptionIds.length);
@@ -137,6 +138,8 @@ contract ChickenWrap is Ownable {
             addresses[index] = subscription.user;
 
             transfer(subscription.user, plan.price);
+
+            return (addresses, paidByAddress);
         }
     }
 
@@ -145,7 +148,7 @@ contract ChickenWrap is Ownable {
         balance[msg.sender] += msg.value;
     }
 
-    function transfer(address from, uint256 planId) {
+    function transfer(address from, uint256 planId) public {
         address partnerAddress = planIdToPartners[planId];
         require(partnerAddress != address(0));
 
@@ -157,10 +160,10 @@ contract ChickenWrap is Ownable {
         stable.transferFrom(from, address(this), feeAmount);
     }
 
-    function triggerSubscriptionPayments(){
+    function triggerSubscriptionPayments(uint256 planId) public {
 
-        uint256[] memory subscriptions = getBillableSubscriptions()
-        billSubscriptions(subscriptions);
+        uint256[] memory subscriptionIds = getBillableSubscriptions(planId);
+        billSubscriptions(subscriptionIds);
     }
 
     function withdraw() external {
