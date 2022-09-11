@@ -88,28 +88,27 @@ contract ChickenWrap is Ownable {
         planIdToPartners[planId] = address(0);
     }
 
-    // function getBillableSubscriptions(uint256 planId)
-    //     external
-    //     view
-    //     returns (uint256[] memory)
-    // {
-    //     Plan memory currentPlan = idToPlans[planId];
-    //     require(currentPlan.price > 0); //check plan for exist
-    //     uint256[] memory subscriptionIds;
-    //     uint256 foundId;
-    //     for (uint256 i = 1; i < currentSubscriptionId; i++) {
-    //         if (planIdToSubscription[planId][i] == i) {
-    //             Subscription 
-    //             if (isSubscriptionReadyForBill(subsription, plan)) 
-    //             {
-    //                 subscriptionIds[foundId] = i;
-    //                 foundId++;
-    //             }
-    //         }
-    //     }
+    function getBillableSubscriptions(uint256 planId)
+        external
+        view
+        returns (uint256[] memory)
+    {
+        Plan memory currentPlan = idToPlans[planId];
+        require(currentPlan.price > 0); //check plan for exist
+        uint256[] memory subscriptionIds;
+        uint256 foundId;
+        for (uint256 i = 1; i < currentSubscriptionId; i++) {
+            if (planIdToSubscription[planId][i] == i) { 
+                if (isSubscriptionReadyForBill(subscriptions[i], currentPlan.id)) 
+                {
+                    subscriptionIds[foundId] = i;
+                    foundId++;
+                }
+            }
+        }
 
-    //     return subscriptionIds;
-    // }
+        return subscriptionIds;
+    }
 
     //todo there are two ways to implement billing.
     //1. Partner call some method and get money transfers
@@ -131,10 +130,11 @@ contract ChickenWrap is Ownable {
                 isSubscriptionReadyForBill(subscription, plan)
             );
             subscription.lastWithdrawTime = block.timestamp;
-            balance[subscription.user] -= plan.price;
-            payable(msg.sender).transfer(plan.price);
+
             paidByAddress[index] = plan.price;
             addresses[index] = subscription.user;
+
+            transfer(subscription.user, plan.price);
         }
     }
 
@@ -143,7 +143,7 @@ contract ChickenWrap is Ownable {
         balance[msg.sender] += msg.value;
     }
 
-    function transfer(address from, uint256 planId) external {
+    function transfer(address from, uint256 planId) {
         address partnerAddress = planIdToPartners[planId];
         require(partnerAddress != address(0));
 
@@ -153,6 +153,12 @@ contract ChickenWrap is Ownable {
         uint256 amount = plan.price - feeAmount;
         stable.transferFrom(from, partnerAddress, amount);
         stable.transferFrom(from, address(this), feeAmount);
+    }
+
+    function triggerSubscriptionPayments(){
+
+        uint256[] memory subscriptions = getBillableSubscriptions()
+        billSubscriptions(subscriptions);
     }
 
     function withdraw() external {
@@ -165,7 +171,7 @@ contract ChickenWrap is Ownable {
         require(currentPlan.price > 0); //check plan for exist
         require(userToSubscriptionId[msg.sender][planId] == 0); //check that user doesnt have this plan already
 
-        //todo: add invocation transfer method here
+        transfer(msg.sender, planId);
 
         Subscription memory subscription = Subscription(
             currentSubscriptionId,
