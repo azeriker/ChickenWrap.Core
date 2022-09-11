@@ -91,6 +91,19 @@ contract ChickenWrap is Ownable {
         planIdToPartners[planId] = address(0);
     }
 
+    function getPlanIds(address owner) public view returns (uint256[] memory) {
+        uint256[] memory planIds = new uint256[](currentPlanId);
+        uint256 counter;
+        for (uint256 index = 1; index < currentPlanId; index++) {
+            if(partnerToIds[owner][index]==true)
+            {
+               planIds[counter]= index;
+               counter++;
+            }            
+        }
+        return planIds;
+    }
+
     function getBillableSubscriptions(uint256 planId)
         public
         view
