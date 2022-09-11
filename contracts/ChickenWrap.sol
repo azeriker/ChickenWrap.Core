@@ -104,6 +104,10 @@ contract ChickenWrap is Ownable {
         return planIds;
     }
 
+    function getPlanById(uint256 planId) public view returns (Plan memory) {
+        return idToPlans[planId];
+    }
+
     function getBillableSubscriptions(uint256 planId)
         public
         view
