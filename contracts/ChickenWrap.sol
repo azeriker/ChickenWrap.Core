@@ -61,7 +61,7 @@ contract ChickenWrap is Ownable {
 
     constructor() {
         registerFee = 10;
-        createPlanFee = 100;
+        createPlanFee = 3;
         //busd address
         stable = IERC20(address(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee));
         adminAddress = address(0x2bd1365a502F83fd0AEa5c0bbd8551E24e548c7C);
@@ -75,13 +75,11 @@ contract ChickenWrap is Ownable {
 
         //todo validate plan parameters
         //todo test it
-        if(stable.transferFrom(msg.sender, adminAddress, createPlanFee * multiplier)){
-            idToPlans[currentPlanId] = plan;
-            idToPlans[currentPlanId].id= currentPlanId;
-            partnerToIds[msg.sender][currentPlanId] = true;
-            planIdToPartners[currentPlanId] = msg.sender;
-            currentPlanId++;
-        }
+        idToPlans[currentPlanId] = plan;
+        idToPlans[currentPlanId].id= currentPlanId;
+        partnerToIds[msg.sender][currentPlanId] = true;
+        planIdToPartners[currentPlanId] = msg.sender;
+        currentPlanId++;
     }
 
     function removePlan(uint256 planId) external {
