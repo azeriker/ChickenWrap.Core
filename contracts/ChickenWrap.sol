@@ -15,6 +15,7 @@ interface IERC20 {
 
 contract ChickenWrap is Ownable {
     struct Plan {
+        uint256 id;
         bool reccuring; //reccuring(A) if true otherwise model(B) 
         //model A
         uint256 price; //amount of money will withdraw per one reccuringInterval
@@ -74,6 +75,7 @@ contract ChickenWrap is Ownable {
         //todo validate plan parameters
         //todo test it
         if(stable.transferFrom(msg.sender, adminAddress, createPlanFee * multiplier)){
+            plan.id = currentPlanId;
             idToPlans[currentPlanId] = plan;
             partnerToIds[msg.sender][currentPlanId] = true;
             planIdToPartners[currentPlanId] = msg.sender;
