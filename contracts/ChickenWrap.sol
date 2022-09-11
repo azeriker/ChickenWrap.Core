@@ -218,6 +218,23 @@ contract ChickenWrap is Ownable {
         delete subscriptions[unsubscribeId];
     }
 
+    function getSubscriptionIds(address owner) public view returns (uint256[] memory){
+        uint256[] memory subIds = new uint256[](currentSubscriptionId);
+        uint256 counter;
+        for (uint256 index = 1; index < currentSubscriptionId; index++) {
+            if(userToSubscriptionId[owner][index]==index)
+            {
+               subIds[counter] = index;
+               counter++;
+            }            
+        }
+        return subIds;
+    }
+
+    function getSubscriptionById(uint256 subId) public view returns (Subscription memory){
+        return subscriptions[subId];
+    }
+
     //pure section
     function isSubscriptionReadyForBill(
         Subscription memory subscription,
